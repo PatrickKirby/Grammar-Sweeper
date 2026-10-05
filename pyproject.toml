@@ -1,0 +1,14 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # long lines exist in the engine and the tests; a wrap would only churn the history
+    "E402",  # entry scripts put the project root on sys.path before they import from it
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

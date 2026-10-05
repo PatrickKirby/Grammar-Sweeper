@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grammar Sweeper mockup</title>
+<style>
+:root {
+  --font: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --accent: #4F46E5; --accent-ink: #fff; --accent-soft: #E0E1FB;
+  --warn: #D97706; --warn-soft: #FDF0DC;
+  --ok: #16A34A; --ok-soft: #DDF3E5;
+  --bad: #DC2626; --bad-soft: #FBE1E1;
+  --dot-ink: #fff;
+  --backdrop-a: #E6E9F7; --backdrop-b: #F3EEF6;
+  --card: #FFFFFF; --card-line: #E3E5EE;
+  --text: #1B1C28; --muted: #5E6175; --field: #F6F7FB;
+  --hud: #FFFFFF; --hud-line: #D5D8E6;
+  --stage: #CBD1E6; --shadow: 0 8px 28px rgba(30,32,70,.18);
+  --tip-bg: #1B1C28; --tip-ink: #F3F4F8;
+}
+/* Dark: neutral Windows 11 greys, one lifted indigo, status colours kept readable on dark. */
+[data-theme="dark"] {
+  --accent: #8B93FF; --accent-ink: #0E1030; --accent-soft: #383C6B;
+  --warn: #FBBF24; --warn-soft: #3D3216;
+  --ok: #4ADE80; --ok-soft: #163A24;
+  --bad: #FB7185; --bad-soft: #432028;
+  --dot-ink: #101114;
+  --backdrop-a: #26272D; --backdrop-b: #202126;
+  --card: #303139; --card-line: #494A55;
+  --text: #F4F5F9; --muted: #B9BBC9; --field: #282930;
+  --hud: #303139; --hud-line: #52535F;
+  --stage: #101115; --shadow: 0 10px 30px rgba(0,0,0,.6);
+  --tip-bg: #F4F5F9; --tip-ink: #16171C;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); background: var(--stage); color: var(--text); font-size: 14px; }
+.review { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding: 10px 16px; background: #14152A; color: #E6E7F5; border-bottom: 1px solid #2a2c4a; }
+.review b { margin-right: 8px; font-weight: 600; }
+.review button { font: inherit; color: inherit; background: #23254A; border: 1px solid #34376a; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+.review button[aria-selected="true"] { background: #4F46E5; border-color: #6a63f0; }
+.review .sp { flex: 1; }
+.note { color: #9ea2cc; font-size: 12px; }
+main { padding: 28px 16px 60px; display: flex; justify-content: center; }
+.screen { display: none; width: 100%; max-width: 1040px; }
+.screen.on { display: block; }
+.cap { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.cap b { color: var(--text); }
+
+.win { margin: 0 auto; width: 640px; max-width: 100%; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(135deg, var(--backdrop-a), var(--backdrop-b)); box-shadow: var(--shadow); border: 1px solid var(--card-line); }
+.title { display: flex; align-items: center; gap: 8px; height: 36px; padding-left: 12px; font-size: 12px; }
+.title img { width: 16px; height: 16px; border-radius: 3px; }
+.title .sp { flex: 1; }
+.title .ctl { display: flex; }
+.title .ctl span { width: 46px; text-align: center; line-height: 36px; color: var(--muted); font-size: 11px; }
+.body { padding: 4px 22px 22px; }
+h1 { font-size: 20px; font-weight: 600; margin: 4px 0 14px; letter-spacing: -.1px; }
+h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 0 0 8px; }
+.card { background: var(--card); border: 1px solid var(--card-line); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+.row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.row + .row { border-top: 1px solid var(--card-line); }
+.row .t { flex: 1; }
+.row .fix { color: var(--muted); font-size: 12px; }
+.dot { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: var(--dot-ink); flex: none; font-weight: 700; }
+.dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+.dot.wait { background: transparent; border: 2px dashed var(--muted); color: var(--muted); }
+.field { width: 100%; background: var(--field); border: 1px solid var(--card-line); border-radius: 4px; padding: 8px 10px; color: var(--text); font: inherit; display: flex; justify-content: space-between; }
+.field span:last-child { color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--card-line); border-radius: 4px; }
+.seg span { padding: 6px 14px; background: var(--field); color: var(--muted); position: relative; cursor: help; }
+.seg span:first-child { border-radius: 3px 0 0 3px; } .seg span:last-child { border-radius: 0 3px 3px 0; }
+.seg span.on { background: var(--accent-soft); color: var(--text); font-weight: 600; box-shadow: inset 0 -2px var(--accent); }
+.tip::after { content: attr(data-tip); position: absolute; z-index: 20; bottom: calc(100% + 8px); right: 0; width: 250px; padding: 9px 11px;
+  background: var(--tip-bg); color: var(--tip-ink); border-radius: 6px; font-size: 12px; font-weight: 400; line-height: 1.4; text-align: left;
+  box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(4px); transition: opacity .12s, transform .12s; }
+.tip:hover::after, .tip:focus::after { opacity: 1; transform: none; }
+.opt { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+.opt + .opt { border-top: 1px solid var(--card-line); }
+.sw { width: 36px; height: 20px; border-radius: 10px; background: var(--accent); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; right: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent-ink); }
+.sw.off { background: var(--card-line); } .sw.off::after { right: auto; left: 3px; background: var(--muted); }
+.btn { font: inherit; border: 1px solid var(--card-line); background: var(--card); color: var(--text); padding: 8px 18px; border-radius: 4px; display: inline-flex; align-items: center; gap: 8px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.coffee { background: #FFDD00; color: #1B1C28; border-color: #E6C500; font-weight: 600; }
+.btn.off { opacity: .45; }
+.actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; flex-wrap: wrap; }
+.reminder { color: var(--muted); font-size: 12px; margin: 4px 0 12px; }
+.banner { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.banner.warn { background: var(--warn-soft); border: 1px solid var(--warn); }
+.banner.info { background: var(--accent-soft); border: 1px solid var(--accent); }
+.banner .t { flex: 1; min-width: 200px; }
+.hero { display: flex; align-items: center; gap: 12px; padding: 16px 22px; }
+.hero.ok { background: var(--ok-soft); } .hero.bad { background: var(--bad-soft); } .hero.warn { background: var(--warn-soft); }
+.review-sw { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.review-sw button { font: inherit; font-size: 12px; padding: 2px 9px; border-radius: 12px; border: 1px solid var(--card-line); background: var(--card); color: var(--text); cursor: pointer; }
+.review-sw button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.hero .big { font-size: 18px; font-weight: 600; }
+.chk { display: flex; gap: 8px; align-items: center; padding: 4px 0; }
+.box { width: 16px; height: 16px; border: 1.5px solid var(--muted); border-radius: 3px; flex: none; }
+.box.on { background: var(--accent); border-color: var(--accent); }
+ul.plain { margin: 6px 0 12px; padding-left: 18px; } ul.plain li { margin: 4px 0; }
+.mono { font-family: Consolas, monospace; font-size: 12px; color: var(--muted); }
+.steps { counter-reset: s; margin: 0; padding: 0; list-style: none; }
+.steps li { counter-increment: s; display: flex; gap: 10px; padding: 6px 0; align-items: center; }
+.steps li::before { content: counter(s); width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); font-size: 12px; flex: none; }
+.steps li.done::before { content: "\2713"; background: var(--ok); color: var(--dot-ink); font-weight: 700; }
+dl.kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 12px; margin: 0; }
+dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; word-break: break-word; }
+.cmp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; }
+.cmp div { background: var(--field); border: 1px solid var(--card-line); border-radius: 6px; padding: 10px 6px; }
+.cmp b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; } .cmp span { color: var(--muted); font-size: 12px; }
+.cmp .win-it b { color: var(--ok); }
+.cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat { text-align: center; } .stat b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; } .stat span { color: var(--muted); font-size: 12px; }
+table.sit { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.sit th, table.sit td { text-align: left; padding: 8px 10px; border-top: 1px solid var(--card-line); vertical-align: top; }
+table.sit th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border-top: 0; }
+a.lnk { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; word-break: break-all; }
+a.lnk:hover { text-decoration-thickness: 2px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--tip-bg); color: var(--tip-ink);
+  padding: 10px 16px; border-radius: 8px; box-shadow: var(--shadow); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; z-index: 50; max-width: 80vw; }
+.toast.on { opacity: 1; transform: translateX(-50%); }
+.menu { background: var(--card); border: 1px solid var(--card-line); border-radius: 8px; box-shadow: var(--shadow); margin-top: -6px; overflow: hidden; }
+.menu .it { display: flex; align-items: center; gap: 10px; padding: 9px 12px; }
+.menu .it + .it { border-top: 1px solid var(--card-line); }
+.menu .it .t { flex: 1; min-width: 0; }
+.menu .it .t small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu .it.sel { background: var(--accent-soft); }
+.menu .tag { font-size: 11px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--card-line); color: var(--muted); white-space: nowrap; }
+.menu .tag.act { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.menu .tag.un { border-color: var(--warn); color: var(--warn); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.pill.a { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); }
+.pill.g { background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok); }
+.pill.r { background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad); }
+
+.desk { position: relative; height: 520px; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--card-line);
+  background: linear-gradient(160deg, #3b4a8a, #7a5aa6 55%, #c97b9b); }
+[data-theme="dark"] .desk { background: linear-gradient(160deg, #1d2447, #3a2b57 55%, #5a2f48); }
+.desk .word { position: absolute; left: 90px; top: 28px; right: 24px; bottom: 56px; background: var(--card); border-radius: 8px; border: 1px solid var(--card-line); display: flex; overflow: hidden; }
+.desk .page { flex: 1; padding: 22px 28px; overflow: hidden; }
+.desk .page i { display: block; height: 7px; background: var(--card-line); border-radius: 4px; margin: 10px 0; }
+.desk .page i.s { width: 70%; } .desk .page i.m { width: 88%; }
+.desk .gp { width: 220px; border-left: 1px solid var(--card-line); background: var(--field); padding: 12px; font-size: 12px; }
+.desk .gp b { display: block; margin-bottom: 8px; }
+.desk .gp .c { background: var(--card); border: 1px solid var(--card-line); border-radius: 6px; padding: 8px; margin: 6px 0; color: var(--muted); }
+.desk .task { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; background: rgba(15,15,26,.85); }
+.hud { position: absolute; left: 14px; top: 14px; width: 310px; background: var(--hud); border: 1px solid var(--hud-line);
+  border-radius: 10px; box-shadow: var(--shadow); padding: 12px 14px; display: grid; grid-template-columns: 64px 1fr; gap: 3px 12px; }
+.hud .ring { grid-row: span 3; width: 64px; height: 64px; position: relative; }
+.hud .ring svg { transform: rotate(-90deg); }
+.hud .ring em { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.1; }
+.hud .n { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.hud .n small { font-size: 11px; font-weight: 400; color: var(--muted); display: block; }
+.hud .meta { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.hud .meta b { color: var(--text); font-weight: 600; }
+.hud .acts { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.hud .acts .btn { padding: 4px 12px; }
+.hud .acts .hint { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.hud .msg { grid-column: 1 / -1; font-size: 12px; padding: 6px 8px; border-radius: 6px; }
+.hud.warn { border-color: var(--warn); } .hud.warn .msg { background: var(--warn-soft); }
+.hud .grab { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 28px; height: 3px; border-radius: 2px; background: var(--hud-line); }
+.callout { margin: 12px auto 0; max-width: 640px; color: var(--muted); font-size: 12px; }
+.inst { width: 560px; }
+.inst .side { width: 150px; background: linear-gradient(180deg, #2c2f7c, #4F46E5); display: grid; place-items: center; }
+.inst .side img { width: 96px; border-radius: 16px; }
+.inst .wrap { display: flex; } .inst .main { flex: 1; padding: 20px; }
+.prog { height: 6px; background: var(--card-line); border-radius: 3px; overflow: hidden; margin: 10px 0; } .prog i { display: block; width: 62%; height: 100%; background: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="review" role="tablist" aria-label="Screens">
+  <b>Grammar Sweeper mockup</b>
+  <button role="tab" data-s="installer">1 Installer</button>
+  <button role="tab" data-s="consent">2 Consent</button>
+  <button role="tab" data-s="ready">3 Ready</button>
+  <button role="tab" data-s="multi">4 Several documents</button>
+  <button role="tab" data-s="blocked">5 Blocked</button>
+  <button role="tab" data-s="find">6 Find panel</button>
+  <button role="tab" data-s="hud">7 HUD running</button>
+  <button role="tab" data-s="hudwarn">8 HUD reconnecting</button>
+  <button role="tab" data-s="hudpause">9 HUD needs you</button>
+  <button role="tab" data-s="away">10 Switched away</button>
+  <button role="tab" data-s="wrongdoc">11 Other document</button>
+  <button role="tab" data-s="interrupt">12 Interruptions</button>
+  <button role="tab" data-s="fatal">13 Fatal</button>
+  <button role="tab" data-s="done">14 Finished</button>
+  <button role="tab" data-s="recover">15 Recovery</button>
+  <button role="tab" data-s="settings">16 Settings</button>
+  <span class="sp"></span>
+  <button id="theme">Light / dark</button>
+  <span class="note">Review controls only. Placeholder data. Arrow keys change screen.</span>
+</div>
+
+<main>
+
+<section class="screen" id="installer">
+  <p class="cap"><b>Installer.</b> Inno Setup, per-user install, no administrator rights.</p>
+  <div class="win inst">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper Setup</span><span class="sp"></span><span class="ctl"><span>&#x2715;</span></span></div>
+    <div class="wrap">
+      <div class="side"><img src="../../assets/icon.png" alt=""></div>
+      <div class="main">
+        <h1>Installing Grammar Sweeper</h1>
+        <p class="mono">Installing to your user folder. No administrator rights needed.</p>
+        <div class="prog"><i></i></div>
+        <p class="reminder">Windows may warn about an unsigned app on first launch. Choose More info, then Run anyway.</p>
+        <div class="chk"><span class="box on"></span> Create a desktop shortcut</div>
+        <div class="actions"><span class="btn off">Back</span><span class="btn primary">Next</span><span class="btn">Cancel</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="consent">
+  <p class="cap"><b>First launch: consent.</b> Shown once. "Don't show again" returns only if backup is off, Track Changes is forced off, or the major version changes.</p>
+  <div class="win">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="body">
+      <h1>Before you start</h1>
+      <div class="card">
+        <p style="margin-top:0">Grammar Sweeper accepts Grammarly's suggestions for you, without showing each one first.</p>
+        <ul class="plain">
+          <li>Some suggestions rewrite sentences. Review the document afterwards.</li>
+          <li>Word's Track Changes may not record these edits. <b>The backup is your only undo.</b></li>
+          <li>A backup is saved before the first change, beside the document. <a class="lnk" href="#" data-open="the backup folder">Open folder</a></li>
+        </ul>
+        <div class="chk"><span class="box on"></span> I understand</div>
+        <div class="chk"><span class="box"></span> Don't show this again</div>
+      </div>
+      <div class="actions"><span class="btn primary">Continue</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="ready">
+  <p class="cap"><b>Main window: ready.</b> Hover Quick, Standard or Thorough for what each means. There is no "by hand" estimate here: the Grammarly panel is not visible before Start, so there is no count to base one on.</p>
+  <div class="win">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="body">
+      <h1>Ready when you are</h1>
+      <div class="card"><h2>Document</h2><div class="field"><span>Delivery Plan vB.docx</span><span>&#x25BE;</span></div></div>
+      <div class="card"><h2>Checks</h2>
+        <div class="row"><span class="dot ok">&#x2713;</span><span class="t">Word is running</span></div>
+        <div class="row"><span class="dot ok">&#x2713;</span><span class="t">Document is open and saved</span></div>
+        <div class="row"><span class="dot ok">&#x2713;</span><span class="t">Not running as administrator</span></div>
+        <div class="row"><span class="dot ok">&#x2713;</span><span class="t">Backup folder is writable</span></div>
+        <div class="row"><span class="dot wait">&middot;</span><span class="t">Grammarly panel</span><span class="fix">Checked when you press Start</span></div>
+      </div>
+      <div class="card"><h2>Options</h2>
+        <div class="opt"><span>Pages</span><span class="field" style="width:200px"><span>Whole document</span><span>&#x25BE;</span></span></div>
+        <div class="opt"><span>Thoroughness</span>
+          <span class="seg">
+            <span class="tip" tabindex="0" title="Quick: one pass." data-tip="Quick: one pass over the document. Fastest. Suggestions that only appear after earlier edits are left, and it cannot confirm the document is clear.">Quick</span>
+            <span class="tip on" tabindex="0" title="Standard: up to four passes." data-tip="Standard: up to four passes, stopping early once two passes in a row find nothing. Right for most documents.">Standard</span>
+            <span class="tip" tabindex="0" title="Thorough: keeps going until clear." data-tip="Thorough: no pass limit. Keeps going until two passes in a row find nothing. Slowest. Best for long documents with many rewrites.">Thorough</span>
+          </span></div>
+        <div class="opt"><span>Keep this computer awake while it runs</span><span class="sw"></span></div>
+        <div class="opt"><span style="color:var(--muted)">&#x25B8; Advanced</span><span></span></div>
+      </div>
+      <p class="reminder">Edits are applied without review. Backup is your undo. <u>Read more</u></p>
+      <div class="actions"><span class="btn primary" style="padding:9px 38px">Start</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="multi">
+  <p class="cap"><b>Main window: several Word documents open.</b> The list shows every open document. The one in front in Word is preselected and tagged Active. Unsaved documents are tagged and must be saved first. Documents that cannot be processed are greyed with the reason.</p>
+  <div class="win">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="body">
+      <h1>Choose a document</h1>
+      <div class="card"><h2>Document</h2>
+        <div class="field"><span>Delivery Plan vB.docx</span><span>&#x25B4;</span></div>
+        <div class="menu" style="margin-top:6px">
+          <div class="it sel"><span class="dot ok">&#x2713;</span><span class="t">Delivery Plan vB.docx<small>C:\Users\you\Documents\Proposals</small></span><span class="tag act">Active in Word</span></div>
+          <div class="it"><span class="dot wait">&middot;</span><span class="t">Delivery Plan vA.docx<small>C:\Users\you\Documents\Proposals</small></span></div>
+          <div class="it"><span class="dot wait">&middot;</span><span class="t">Board Paper.docx<small>C:\Users\you\Documents\Board</small></span><span class="tag un">Unsaved changes</span></div>
+          <div class="it" style="opacity:.55"><span class="dot warn">!</span><span class="t">Supplier Terms.docx<small>Protected View. Click Enable Editing in Word first</small></span></div>
+          <div class="it" style="opacity:.55"><span class="dot warn">!</span><span class="t">Draft (never saved)<small>Save it once so a backup can be made</small></span></div>
+        </div>
+      </div>
+      <div class="banner warn"><span class="dot warn">!</span><span class="t"><b>Selecting a document is not enough.</b> During the run, Word must keep this document in front. If you switch to another document, the run pauses.</span></div>
+      <div class="actions"><span class="btn primary" style="padding:9px 38px">Start</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="blocked">
+  <p class="cap"><b>Main window: blocked.</b> Red rows disable Start and carry a one-line fix. Amber rows warn only.</p>
+  <div class="win">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="body">
+      <h1>One thing to fix first</h1>
+      <div class="card"><h2>Document</h2><div class="field"><span>Open a document in Word to begin</span><span>&#x25BE;</span></div></div>
+      <div class="card"><h2>Checks</h2>
+        <div class="row"><span class="dot ok">&#x2713;</span><span class="t">Word is running</span></div>
+        <div class="row"><span class="dot bad">&#x2715;</span><span class="t">Running as administrator</span><span class="fix">Close this app and reopen it normally from the Start menu</span></div>
+        <div class="row"><span class="dot warn">!</span><span class="t">Document opened in Protected View</span><span class="fix">Click Enable Editing in Word</span></div>
+        <div class="row"><span class="dot ok">&#x2713;</span><span class="t">Backup folder is writable</span></div>
+      </div>
+      <div class="actions"><span class="btn primary off" style="padding:9px 38px">Start</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="find">
+  <p class="cap"><b>After Start: looking for the Grammarly panel.</b> The app cannot open the panel itself, so it asks.</p>
+  <div class="win">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="body">
+      <h1>Starting</h1>
+      <div class="card"><ul class="steps">
+        <li class="done">Backup saved <a class="lnk mono" href="#" data-open="Delivery Plan vB.backup-20261005-0910.docx">Delivery Plan vB.backup-20261005-0910.docx</a></li>
+        <li class="done">Word brought to the front</li>
+        <li>Looking for the Grammarly panel</li></ul></div>
+      <div class="banner warn"><span class="dot warn">!</span><span class="t"><b>Open Grammarly in Word</b> so the suggestion list is visible, then press Try again.</span></div>
+      <div class="actions"><span class="btn">Cancel</span><span class="btn primary">Try again</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="hud">
+  <p class="cap"><b>HUD running.</b> Starts at the top-left, draggable anywhere, never takes focus. Shows time running. The ring says "about" and uses a lower bound.</p>
+  <div class="desk">
+    <div class="word"><div class="page"><i class="m"></i><i></i><i class="s"></i><i class="m"></i><i></i><i class="s"></i><i class="m"></i><i></i></div>
+      <div class="gp"><b>Grammarly</b><div class="c">Correctness: add a period</div><div class="c">Clarity: improve wording</div><div class="c">Correctness: spelling</div></div></div>
+    <div class="task"></div>
+    <div class="hud"><span class="grab"></span>
+      <div class="ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="var(--card-line)" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="64"/></svg><em>about<br>62%</em></div>
+      <div class="n"><small>Applied</small>1,284</div>
+      <div class="meta">Page 37 of 109 &middot; Sweep 2</div>
+      <div class="meta">Running <b>1 h 02 min</b></div>
+      <div class="acts"><span class="btn">Pause</span><span class="btn">Stop</span><span class="hint">Esc = Stop</span></div>
+    </div>
+  </div>
+  <p class="callout">Placeholder numbers. In this layout the Grammarly panel is on the right, so the top-left start position keeps the HUD clear of it.</p>
+</section>
+
+<section class="screen" id="hudwarn">
+  <p class="cap"><b>HUD: reconnecting (recoverable).</b> Amber, continues by itself, never a traceback. The running clock keeps counting.</p>
+  <div class="desk">
+    <div class="word"><div class="page"><i class="m"></i><i></i><i class="s"></i><i class="m"></i><i></i></div><div class="gp"><b>Grammarly</b><div class="c">Panel reloading</div></div></div>
+    <div class="task"></div>
+    <div class="hud warn"><span class="grab"></span>
+      <div class="ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="var(--card-line)" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--warn)" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="64"/></svg><em>about<br>62%</em></div>
+      <div class="n"><small>Applied</small>1,284</div>
+      <div class="meta">Page 37 of 109 &middot; Sweep 2</div>
+      <div class="meta">Running <b>1 h 02 min</b></div>
+      <div class="msg">Reconnecting to Grammarly</div>
+      <div class="acts"><span class="btn">Pause</span><span class="btn">Stop</span><span class="hint">Esc = Stop</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="hudpause">
+  <p class="cap"><b>HUD: needs you (paused).</b> One plain instruction. Resumes by itself when the condition clears. The clock stops while paused.</p>
+  <div class="desk">
+    <div class="word"><div class="page"><i class="m"></i><i></i><i class="s"></i><i class="m"></i></div><div class="gp"><b></b></div></div>
+    <div class="task"></div>
+    <div class="hud warn"><span class="grab"></span>
+      <div class="ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="var(--card-line)" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--warn)" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="64" opacity=".5"/></svg><em>paused</em></div>
+      <div class="n"><small>Applied</small>1,284</div>
+      <div class="meta">Page 37 of 109 &middot; Sweep 2</div>
+      <div class="meta">Running <b>1 h 02 min</b> (paused)</div>
+      <div class="msg"><b>Grammarly was closed.</b> Open it in Word to continue.</div>
+      <div class="acts"><span class="btn primary">Resume</span><span class="btn">Stop</span><span class="hint">Esc = Stop</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="away">
+  <p class="cap"><b>HUD: you switched to another app.</b> A brief pop-up is corrected silently. A deliberate switch pauses the run instead of fighting you for the window.</p>
+  <div class="desk">
+    <div class="word" style="left:200px;right:60px;top:60px;bottom:90px;opacity:.9"><div class="page"><i class="m"></i><i></i><i class="s"></i><i class="m"></i><i></i><i class="s"></i></div></div>
+    <div class="task"></div>
+    <div class="hud warn"><span class="grab"></span>
+      <div class="ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="var(--card-line)" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--warn)" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="64" opacity=".5"/></svg><em>paused</em></div>
+      <div class="n"><small>Applied</small>1,284</div>
+      <div class="meta">Page 37 of 109 &middot; Sweep 2</div>
+      <div class="meta">Running <b>1 h 02 min</b> (paused)</div>
+      <div class="msg"><b>You switched to another app.</b> Return to Word and the run continues by itself. I will not take the window back while you are working.</div>
+      <div class="acts"><span class="btn primary">Go to Word</span><span class="btn">Stop</span><span class="hint">Esc = Stop</span></div>
+    </div>
+  </div>
+  <p class="callout">Proposal. Today's engine always pulls Word back to the front within one cycle. The GUI changes that so it never fights a person who is using the computer.</p>
+</section>
+
+<section class="screen" id="wrongdoc">
+  <p class="cap"><b>HUD: a different Word document came to the front.</b> The run pauses before any click, because Grammarly follows whichever document has focus and would edit the wrong one.</p>
+  <div class="desk">
+    <div class="word" style="left:150px;right:60px;top:50px;bottom:80px"><div class="page"><i class="m"></i><i></i><i class="s"></i><i class="m"></i><i></i><i class="s"></i><i class="m"></i></div>
+      <div class="gp"><b>Grammarly</b><div class="c" style="color:var(--text)">Showing suggestions for Board Paper.docx</div></div></div>
+    <div class="task"></div>
+    <div class="hud warn"><span class="grab"></span>
+      <div class="ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="var(--card-line)" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--warn)" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="64" opacity=".5"/></svg><em>paused</em></div>
+      <div class="n"><small>Applied</small>1,284</div>
+      <div class="meta">Page 37 of 109 &middot; Sweep 2</div>
+      <div class="meta">Running <b>1 h 02 min</b> (paused)</div>
+      <div class="msg"><b>Word is showing Board Paper.docx.</b> This run is for Delivery Plan vB.docx. Nothing was changed in Board Paper.</div>
+      <div class="acts"><span class="btn primary">Back to vB</span><span class="btn">Stop</span><span class="hint">Esc = Stop</span></div>
+    </div>
+  </div>
+  <p class="callout">Proposal. The app checks that the front document is the target before every click, not only between pages. The clicks already made before the switch was noticed are listed on the finished screen so they can be checked.</p>
+</section>
+
+<section class="screen" id="interrupt">
+  <p class="cap"><b>Interruptions.</b> What the user sees and what the app does when something changes under it.</p>
+  <div class="win" style="width:900px">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="body">
+      <div class="card" style="padding:6px 10px">
+      <table class="sit">
+        <tr><th>Situation</th><th>Tier</th><th>What the HUD says</th><th>What the app does</th></tr>
+        <tr><td>A notification or pop-up takes focus for a moment</td><td><span class="pill g">Recoverable</span></td><td>Nothing, or "Reconnecting" for a second</td><td>Brings Word back to the front by itself</td></tr>
+        <tr><td>You deliberately switch to another app and work in it</td><td><span class="pill a">Needs you</span></td><td>"You switched to another app. Return to Word to continue."</td><td>Pauses, stops clicking, resumes when Word is in front again</td></tr>
+        <tr><td>You bring a different Word document to the front</td><td><span class="pill a">Needs you</span></td><td>"Word is showing Board Paper.docx. This run is for Delivery Plan vB.docx."</td><td>Pauses before the next click, never clicks while the wrong document is in front, resumes when the right one returns</td></tr>
+        <tr><td>You close the Grammarly panel</td><td><span class="pill a">Needs you</span></td><td>"Grammarly was closed. Open it in Word to continue."</td><td>Pauses, re-checks with growing gaps, resumes by itself when the panel returns</td></tr>
+        <tr><td>Grammarly restarts or reloads</td><td><span class="pill g">Recoverable</span></td><td>"Reconnecting to Grammarly"</td><td>Re-finds the panel and carries on</td></tr>
+        <tr><td>You close the document, with a save prompt</td><td><span class="pill a">Needs you</span></td><td>"The document was closed. Reopen it to continue."</td><td>Pauses. Edits since the last periodic save may be lost if you chose Don't Save, so the HUD says where the backup is</td></tr>
+        <tr><td>You close Word entirely</td><td><span class="pill r">Fatal</span></td><td>"Word was closed."</td><td>Safe stop, shows the summary and the backup path</td></tr>
+        <tr><td>Word shows a dialog and stops answering</td><td><span class="pill a">Needs you</span></td><td>"Word is waiting for you. Close its dialog to continue."</td><td>Pauses, retries, resumes when Word answers</td></tr>
+        <tr><td>Nothing useful happens for 5 minutes of running time</td><td><span class="pill r">Fatal</span></td><td>"No progress for 5 minutes. Stopped to be safe."</td><td>Safe stop, summary, backup path, Copy diagnostics. Time spent paused for you does not count, and moving to a new page counts as progress</td></tr>
+        <tr><td>The computer sleeps or the screen locks</td><td><span class="pill a">Needs you</span></td><td>"Paused while the screen was locked."</td><td>Sleep is blocked while running. A screen lock cannot be blocked, so the run pauses and resumes after unlock</td></tr>
+      </table></div>
+    </div>
+  </div>
+  <p class="callout" style="max-width:900px">These behaviours are the design. The retry back-off and the periodic save exist in the engine today. The engine's no-progress stop exists too, but at 20 minutes and counting paused time, so it needs changing to 5 minutes of running time. Detecting a deliberate switch, a different document, a closed document and a blocked dialog are new work.</p>
+</section>
+
+<section class="screen" id="fatal">
+  <p class="cap"><b>Fatal error.</b> Safe stop. Diagnostics redact document text by default.</p>
+  <div class="win">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="hero bad"><span class="dot bad" style="width:28px;height:28px;font-size:15px">&#x2715;</span><div><div class="big">The run stopped</div><div class="reminder" style="margin:0">Word stopped responding and could not be reached again.</div></div></div>
+    <div class="body" style="padding-top:14px">
+      <div class="card"><dl class="kv">
+        <dt>Applied before the stop</dt><dd>1,284</dd><dt>Ran for</dt><dd>1 h 02 min</dd>
+        <dt>Backup</dt><dd><a class="lnk mono" href="#" data-open="Delivery Plan vB.backup-20261005-0910.docx">Delivery Plan vB.backup-20261005-0910.docx</a></dd></dl></div>
+      <div class="card"><div class="chk"><span class="box"></span> Include card text (quotes your document)</div></div>
+      <div class="actions"><span class="btn">Open backup folder</span><span class="btn primary">Copy diagnostics</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="done">
+  <p class="cap"><b>Finished.</b> A toast announces this when the app is not in front. The manual-time figures are computed from the run, at 8 seconds per suggestion. Result shown:
+    <span class="review-sw" role="group" aria-label="Review only: result state">
+      <button data-r="clear" aria-pressed="true">Clear</button><button data-r="limit" aria-pressed="false">Pass limit</button><button data-r="stopped" aria-pressed="false">Stopped</button><button data-r="timelimit" aria-pressed="false">2 hour limit</button><button data-r="repeat" aria-pressed="false">Repeating</button>
+    </span> <span style="font-size:12px">(review switch, not part of the app)</span></p>
+  <div class="win" data-applied="1284" data-run="3720" data-per="8">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="hero ok" id="hero"><span class="dot ok" id="hero-dot" style="width:28px;height:28px;font-size:15px">&#x2713;</span><div><div class="big" id="hero-title">Done</div><div class="reminder" style="margin:0"><span data-fill="applied">1,284</span> suggestions applied in <span data-fill="run">1 h 02 min</span></div></div></div>
+    <div class="body" style="padding-top:14px">
+      <div class="card" id="result"><h2>Grammarly result</h2>
+        <div class="row"><span class="dot ok" id="result-dot">&#x2713;</span><span class="t"><b id="result-head">Nothing left</b><br><span id="result-body" class="fix" style="font-size:13px">Two full passes in a row found no suggestions.</span></span></div>
+        <div class="row" id="result-cta" style="display:none"><span class="t fix" id="result-cta-text"></span><span class="btn primary" id="result-cta-btn">Run Thorough</span></div>
+      </div>
+      <div class="cards3">
+        <div class="card stat"><b>640</b><span>Correctness</span></div>
+        <div class="card stat"><b>410</b><span>Clarity</span></div>
+        <div class="card stat"><b>234</b><span>Other</span></div>
+      </div>
+      <div class="card"><h2>Your time</h2>
+        <div class="cmp">
+          <div><b data-fill="manual">2 h 51 min</b><span>By hand, at 8 seconds each</span></div>
+          <div><b data-fill="run">1 h 02 min</b><span>This run</span></div>
+          <div class="win-it"><b data-fill="saved">1 h 49 min</b><span>Saved</span></div>
+        </div></div>
+      <div class="card"><h2>This run</h2><dl class="kv">
+        <dt>Document</dt><dd><a class="lnk" href="#" data-open="Delivery Plan vB.docx">Delivery Plan vB.docx</a></dd>
+        <dt>Location</dt><dd><a class="lnk mono" href="#" data-open="the document folder">C:\Users\you\Documents\Proposals</a></dd>
+        <dt>Pages</dt><dd>109</dd>
+        <dt>Passes</dt><dd id="passes">Standard, 3 of up to 4 used. The last 2 found nothing.</dd>
+        <dt>Started, finished</dt><dd id="finish">09:10, 10:12</dd>
+        <dt>Length of text</dt><dd>285,173 to 285,937 characters</dd>
+        <dt>Backup</dt><dd><a class="lnk mono" href="#" data-open="Delivery Plan vB.backup-20261005-0910.docx">Delivery Plan vB.backup-20261005-0910.docx</a></dd></dl></div>
+      <div class="banner warn"><span class="t">Edits are not tracked in Word's Review pane. Review the document, and keep the backup until you are happy.</span></div>
+      <div class="actions"><span class="btn coffee"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8z"/><path d="M17 10h2a2 2 0 0 1 0 4h-2"/><path d="M8 2v3M12 2v3"/></svg>Buy me a coffee</span><span class="btn">Open backup folder</span><span class="btn">Open document</span><span class="btn primary">Run again</span></div>
+    </div>
+  </div>
+  <p class="callout">The Buy me a coffee link target is a placeholder. A real page address is needed before release.</p>
+</section>
+
+<section class="screen" id="recover">
+  <p class="cap"><b>Relaunch after a crash.</b> No automatic restore. Overwriting an open document could lose newer edits.</p>
+  <div class="win">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="body">
+      <div class="banner warn"><span class="dot warn">!</span><span class="t"><b>Your last run stopped at page 37.</b> Your backup is saved beside the document.</span><span class="btn">Open backup folder</span><span class="btn primary">Resume sweep</span><span class="btn">Dismiss</span></div>
+      <h1>Ready when you are</h1>
+      <div class="card"><h2>Document</h2><div class="field"><span>Delivery Plan vB.docx</span><span>&#x25BE;</span></div></div>
+      <div class="actions"><span class="btn primary" style="padding:9px 38px">Start</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="settings">
+  <p class="cap"><b>Settings.</b> One short page.</p>
+  <div class="win">
+    <div class="title"><img src="../../assets/icon.png" alt=""><span>Grammar Sweeper</span><span class="sp"></span><span class="ctl"><span>&#x2014;</span><span>&#x25A1;</span><span>&#x2715;</span></span></div>
+    <div class="body">
+      <h1>Settings</h1>
+      <div class="card">
+        <div class="opt"><span>Show the safety notice again</span><span class="sw off"></span></div>
+        <div class="opt"><span>Open log folder</span><span>&#x203A;</span></div>
+        <div class="opt"><span>Version and licence</span><span class="mono">MIT</span></div>
+        <div class="opt"><span>Advanced and diagnostics</span><span>&#x203A;</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const SECONDS_PER_SUGGESTION = 8;
+function dur(s) {
+  s = Math.round(s);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  return h > 0 ? h + ' h ' + String(m).padStart(2, '0') + ' min' : Math.max(m, 1) + ' min';
+}
+function fill(name, text) { document.querySelectorAll('[data-fill="' + name + '"]').forEach(e => e.textContent = text); }
+function estimates() {
+  const done = document.querySelector('#done .win');
+  const applied = +done.dataset.applied, run = +done.dataset.run;
+  const manual = applied * SECONDS_PER_SUGGESTION;
+  fill('applied', applied.toLocaleString('en-AU'));
+  fill('manual', dur(manual));
+  fill('run', dur(run));
+  fill('saved', dur(manual - run));
+  fill('per', SECONDS_PER_SUGGESTION);
+}
+estimates();
+
+const RESULT = {
+  clear:   { cls: 'ok',   mark: '✓', title: 'Done', head: 'Nothing left',
+             body: 'Two full passes in a row found no suggestions.', cta: null,
+             passes: 'Standard, 3 of up to 4 used. The last 2 found nothing.' },
+  limit:   { cls: 'warn', mark: '!', title: 'Finished, with suggestions remaining', head: 'Suggestions may remain',
+             body: 'Standard stops after 4 passes, and the last pass still applied 37. Grammarly may have more.',
+             cta: ['Thorough keeps going until two passes in a row find nothing.', 'Run Thorough'],
+             passes: 'Standard, 4 of up to 4 used. The last one still applied 37.' },
+  stopped: { cls: 'warn', mark: '!', title: 'Stopped', head: 'Suggestions remain',
+             body: 'You stopped the run during pass 2. Grammarly was still showing 12 in the region it last viewed, so there are at least that many.',
+             cta: ['Start again, or run Thorough to keep going until clear.', 'Run Thorough'],
+             passes: 'Standard, stopped during pass 2 of up to 4.' },
+  timelimit: { cls: 'warn', mark: '!', title: 'Stopped: 2 hour limit reached', head: 'Suggestions remain',
+             body: 'The run reached its 2 hour limit during pass 3. Grammarly was still showing 12 in the region it last viewed, so there are at least that many. Your edits so far are kept.',
+             cta: ['Run Thorough again to carry on from the document as it is now.', 'Run Thorough'],
+             passes: 'Thorough, stopped during pass 3. No pass limit.', run: 7200 },
+  repeat:  { cls: 'warn', mark: '!', title: 'Stopped: the changes started repeating', head: 'Suggestions remain',
+             body: 'After pass 4 the document matched how it looked after pass 2. Grammarly keeps offering changes that undo each other, so more passes would not help. Review the sections it keeps changing.',
+             cta: ['A person needs to settle the wording. Another run will not converge.', 'Open document'],
+             passes: 'Thorough, stopped after pass 4. The text matched pass 2.' }
+};
+function setResult(key) {
+  const r = RESULT[key];
+  const hero = document.getElementById('hero');
+  hero.className = 'hero ' + r.cls;
+  const hd = document.getElementById('hero-dot'); hd.className = 'dot ' + r.cls; hd.textContent = r.mark;
+  document.getElementById('hero-title').textContent = r.title;
+  const rd = document.getElementById('result-dot'); rd.className = 'dot ' + r.cls; rd.textContent = r.mark;
+  document.getElementById('result-head').textContent = r.head;
+  document.getElementById('result-body').textContent = r.body;
+  document.getElementById('passes').textContent = r.passes;
+  document.querySelector('#done .win').dataset.run = r.run || 3720;
+  document.getElementById('finish').textContent = r.run ? '09:10, 11:10' : '09:10, 10:12';
+  estimates();
+  const cta = document.getElementById('result-cta');
+  cta.style.display = r.cta ? '' : 'none';
+  if (r.cta) {
+    document.getElementById('result-cta-text').textContent = r.cta[0];
+    document.getElementById('result-cta-btn').textContent = r.cta[1];
+  }
+  document.querySelectorAll('.review-sw button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.r === key)));
+}
+document.querySelectorAll('.review-sw button').forEach(b => b.addEventListener('click', () => setResult(b.dataset.r)));
+(function () { const k = new URLSearchParams(location.search).get('r'); if (k && RESULT[k]) setResult(k); })();
+
+let toastTimer;
+function toast(text) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = text; t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[data-open]');
+  if (!a) return;
+  e.preventDefault();
+  toast('In the app this opens ' + a.dataset.open + ' in Explorer, with the file selected.');
+});
+
+const tabs = [...document.querySelectorAll('.review [data-s]')];
+const screens = [...document.querySelectorAll('.screen')];
+function show(id) {
+  screens.forEach(s => s.classList.toggle('on', s.id === id));
+  tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.s === id)));
+  history.replaceState(null, '', '?' + (document.documentElement.dataset.theme === 'dark' ? 'theme=dark&' : '') + 's=' + id);
+}
+tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.s)));
+document.getElementById('theme').addEventListener('click', () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+  const cur = tabs.find(t => t.getAttribute('aria-selected') === 'true');
+  show(cur ? cur.dataset.s : 'ready');
+});
+document.addEventListener('keydown', e => {
+  const i = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+  if (e.key === 'ArrowRight') show(tabs[Math.min(i + 1, tabs.length - 1)].dataset.s);
+  if (e.key === 'ArrowLeft') show(tabs[Math.max(i - 1, 0)].dataset.s);
+});
+const q = new URLSearchParams(location.search);
+if (q.get('theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+show(q.get('s') || 'ready');
+</script>
+</body>
+</html>

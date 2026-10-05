@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+click_target.json
+click_target.json.tmp
+checkpoint.json
+checkpoint.json.tmp
+learned_names.json
+learned_names.json.tmp
+logs/
+*.backup-*.docx
+docs/shots/
+dist*/
+build*/
+sweeper/_build_info.py
+docs/dependencies/*.delivery.json
