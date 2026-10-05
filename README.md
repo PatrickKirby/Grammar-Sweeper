@@ -2,8 +2,8 @@
 
 # Grammar Sweeper
 
-Accepts Grammarly suggestions for a Microsoft Word document in a loop, sweeping
-the document page by page, so a document carrying thousands of cards does not
+Accepts Grammarly suggestions for a document, sweeping
+the document page by page, so a document carrying thousands of suggestions for improvement does not
 have to be clicked through one card at a time. Windows only.
 
 ## Disclaimer
@@ -11,9 +11,7 @@ have to be clicked through one card at a time. Windows only.
 **Read this before running it.**
 
 - **This is unofficial and unaffiliated.** It is not made, endorsed, or
-  supported by Grammarly. It automates Grammarly's user interface, and doing so
-  may breach Grammarly's terms of service. Whether it does is your
-  responsibility to check. Use it at your own risk, on your own account.
+  supported by Grammarly. It automates Grammarly's user interface. Use it at your own risk, on your own account.
 - **It applies suggestions without reading them.** Rewrite cards such as
   `Improve your text` restructure sentences. Accepting hundreds of them changes
   how a document argues, not only how it spells. Review the result.
