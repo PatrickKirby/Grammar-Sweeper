@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](CONTRIBUTING.md)
 [![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D6)](#two-ways-to-get-it)
-[![CI](https://github.com/PatrickKirby/GrammarSweeper/actions/workflows/ci.yml/badge.svg)](https://github.com/PatrickKirby/GrammarSweeper/actions/workflows/ci.yml)
+[![CI](https://github.com/PatrickKirby/Grammar-Sweeper/actions/workflows/ci.yml/badge.svg)](https://github.com/PatrickKirby/Grammar-Sweeper/actions/workflows/ci.yml)
 
 Accepts Grammarly suggestions for a document, sweeping
 the document page by page, so a document carrying thousands of suggestions for improvement does not
