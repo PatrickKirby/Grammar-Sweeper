@@ -26,7 +26,7 @@ def settings_dir() -> Path:
 
 
 COFFEE_URL = "https://buymeacoffee.com/preceperi"
-REPO_URL = "https://github.com/PatrickKirby/GrammarSweeper"
+REPO_URL = "https://github.com/PatrickKirby/Grammar-Sweeper"
 APERTURA_URL = "https://theapertura.substack.com"
 COMPANY = "Preceperi Limited"
 
